@@ -3,80 +3,129 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Onde Assistir</title>
+  <title>Busca de Filmes</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
-  <h1 class="text-3xl font-bold mb-6 flex items-center gap-2">
-    🔍 Descubra onde assistir seu filme
-  </h1>
+<body class="bg-gray-900 text-white">
 
-  <div class="flex flex-col items-center w-full max-w-md">
+  <div class="p-6">
     <input id="movieInput" type="text" placeholder="Digite o nome do filme"
-      class="w-full p-3 rounded-lg text-black mb-4 outline-none" />
+      class="p-2 rounded text-black w-full max-w-md" />
     <button id="searchBtn"
-      class="bg-green-500 px-6 py-2 rounded-lg hover:bg-green-600 transition">
+      class="ml-2 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded">
       Buscar
     </button>
   </div>
 
-  <div id="results" class="mt-6 w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  <div id="results" class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
 
   <script>
+    // Detecta ambiente automaticamente
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  
+    const API_BASE = isLocal
+      ? "http://localhost:3000" // Backend rodando local
+      : "https://onde-assistir-meu-filme.vercel.app"; // Backend no Vercel
+  
+    console.log("Usando API_BASE:", API_BASE);
+  
     document.getElementById("searchBtn").addEventListener("click", async () => {
       const movie = document.getElementById("movieInput").value.trim();
       const resultsDiv = document.getElementById("results");
       resultsDiv.innerHTML = "";
-
+  
       if (!movie) {
         resultsDiv.innerHTML = "<p class='text-red-400'>Digite um nome válido.</p>";
         return;
       }
-
+  
       try {
-        const res = await fetch(`http://localhost:3000/streaming/${encodeURIComponent(movie)}`);
+        const res = await fetch(`${API_BASE}/streaming/${encodeURIComponent(movie)}`);
+        if (!res.ok) {
+          const text = await res.text();
+          console.error("Erro da API:", res.status, text);
+          resultsDiv.innerHTML = `<p class='text-red-400'>Erro: ${res.status} ao consultar a API.</p>`;
+          return;
+        }
+  
         const data = await res.json();
+        console.log("Resposta da API:", data);
+  
+        // Normaliza o array de filmes (aceita 1 ou vários)
+let filmesArray = [];
 
-        if (!data.filmes || data.filmes.length === 0) {
+if (Array.isArray(data)) {
+  filmesArray = data;
+} else if (Array.isArray(data.filmes)) {
+  filmesArray = data.filmes;
+} else if (Array.isArray(data.results)) {
+  filmesArray = data.results;
+} else if (Array.isArray(data.data)) {
+  filmesArray = data.data;
+} else if (data && typeof data === "object") {
+  filmesArray = [data]; // 👈 transforma único filme em array
+} else {
+  filmesArray = [];
+}
+
+  
+        if (filmesArray.length === 0) {
           resultsDiv.innerHTML = "<p class='text-gray-400'>Nenhum filme encontrado.</p>";
           return;
         }
-
-        data.filmes.forEach(filme => {
-          const filmeDiv = document.createElement("div");
-          filmeDiv.className = "bg-gray-800 p-4 rounded-lg shadow-lg";
-
-          let provedoresHTML = "";
-          if (filme.provedores && filme.provedores.length > 0) {
-            provedoresHTML = `
-              <div class="flex gap-4 mt-3 flex-wrap">
-                ${filme.provedores.map(p => `
-                  <div class="flex flex-col items-center">
-                    <img src="${p.logo}" alt="${p.nome}" class="w-12 h-12 mb-1 rounded">
-                    <span class="text-sm">${p.nome}</span>
-                  </div>
-                `).join("")}
-              </div>
-            `;
-          } else {
-            provedoresHTML = `<p class="text-sm text-gray-400 mt-3">Nenhum provedor encontrado</p>`;
-          }
-
-          filmeDiv.innerHTML = `
-  ${filme.capa ? `<img src="${filme.capa}" alt="${filme.titulo}" class="w-full rounded mb-3">` : ""}
-  <h2 class="text-xl font-semibold">${filme.titulo}</h2>
-  <p class="text-gray-300 mt-2">${filme.descricao || "Sem descrição disponível."}</p>
-  ${provedoresHTML}
-`;
-
-
-          resultsDiv.appendChild(filmeDiv);
+  
+        resultsDiv.className = "p-6 grid grid-cols-1 md:grid-cols-3 gap-4";
+        resultsDiv.innerHTML = "";
+  
+        filmesArray.forEach(filme => {
+          const title = filme.title || filme.titulo || filme.name || "Título indisponível";
+          const overview = filme.overview || filme.descricao || filme.plot || "";
+          const posterPath = filme.poster_path || filme.poster || filme.capa || null;
+          const posterUrl = posterPath
+            ? (posterPath.startsWith("http") ? posterPath : `https://image.tmdb.org/t/p/w300${posterPath}`)
+            : "https://via.placeholder.com/300x450?text=Sem+Capa";
+  
+          let providersArr = [];
+          if (Array.isArray(filme.providers)) providersArr = filme.providers;
+          else if (Array.isArray(filme.provedores)) providersArr = filme.provedores;
+          else if (Array.isArray(filme.providersData)) providersArr = filme.providersData;
+  
+          providersArr = providersArr.map(p => ({
+            name: p.provider_name || p.nome || p.name || "Provedor",
+            logo: p.logo_path
+              ? (p.logo_path.startsWith("http") ? p.logo_path : `https://image.tmdb.org/t/p/original${p.logo_path}`)
+              : (p.logo || null)
+          }));
+  
+          const providersHTML = providersArr.length
+            ? `<div class="flex gap-3 mt-3 flex-wrap justify-center">
+                 ${providersArr.map(pr => `
+                   <div class="flex flex-col items-center text-xs">
+                     ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-10 h-10 mb-1 rounded">` : ""}
+                     <span class="text-sm">${pr.name}</span>
+                   </div>
+                 `).join("")}
+               </div>`
+            : `<p class="text-sm text-gray-400 mt-3">Nenhum provedor encontrado</p>`;
+  
+          const card = document.createElement("div");
+          card.className = "bg-gray-800 p-4 rounded-lg shadow flex flex-col items-center";
+          card.innerHTML = `
+            <img src="${posterUrl}" alt="${title}" class="w-full rounded mb-3 object-cover">
+            <h2 class="text-lg font-semibold text-center">${title}</h2>
+            <p class="text-sm mt-2 text-gray-300">${overview || "Sem descrição disponível."}</p>
+            ${providersHTML}
+          `;
+          resultsDiv.appendChild(card);
         });
+  
       } catch (err) {
-        console.error(err);
-        resultsDiv.innerHTML = "<p class='text-red-400'>Erro ao buscar dados.</p>";
+        console.error("Erro no frontend:", err);
+        resultsDiv.innerHTML = "<p class='text-red-400'>Erro ao buscar filme. Veja o console.</p>";
       }
     });
   </script>
+  
+
 </body>
 </html>

@@ -3,52 +3,52 @@ import fetch from "node-fetch";
 import cors from "cors";
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
 app.use(cors());
+app.use(express.json());
 
-const API_KEY = "0d362601b04741566e35e6417a78da9a";
+const TMDB_API_KEY = process.env.TMDB_API_KEY || "0d362601b04741566e35e6417a78da9a";
 
-app.get("/streaming/:nome", async (req, res) => {
-  const nome = req.params.nome;
-
+// Rota para buscar filme
+app.get("/streaming/:movie", async (req, res) => {
   try {
-    // 1. Buscar filme pelo nome
-    const searchRes = await fetch(
-      `https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&language=pt-BR&query=${encodeURIComponent(nome)}`
-    );
+    const movieName = req.params.movie;
+
+    // Busca lista de filmes
+    const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&language=pt-BR&query=${encodeURIComponent(movieName)}`;
+    const searchRes = await fetch(searchUrl);
     const searchData = await searchRes.json();
 
-    if (!searchData.results || searchData.results.length === 0) {
-      return res.json({ filmes: [] });
+    if (!searchData.results.length) {
+      return res.status(404).json({ error: "Nenhum filme encontrado" });
     }
 
-    // 2. Montar lista de filmes
-    const filmes = await Promise.all(
-      searchData.results.map(async (filme) => {
-        // Buscar provedores para cada filme
-        const provRes = await fetch(
-          `https://api.themoviedb.org/3/movie/${filme.id}/watch/providers?api_key=${API_KEY}`
-        );
-        const provData = await provRes.json();
+    // Para cada filme, busca provedores
+    const filmesComProvedores = await Promise.all(
+      searchData.results.map(async (movie) => {
+        const providersUrl = `https://api.themoviedb.org/3/movie/${movie.id}/watch/providers?api_key=${TMDB_API_KEY}`;
+        const providersRes = await fetch(providersUrl);
+        const providersData = await providersRes.json();
 
-        const provedores = provData.results.BR?.flatrate?.map((p) => ({
-          nome: p.provider_name,
-          logo: `https://image.tmdb.org/t/p/original${p.logo_path}`,
-        })) || [];
+        const providers = providersData.results.BR?.flatrate || [];
 
         return {
-          titulo: filme.title,
-          descricao: filme.overview,
-          capa: filme.poster_path ? `https://image.tmdb.org/t/p/w500${filme.poster_path}` : null,
-          provedores
+          title: movie.title,
+          overview: movie.overview,
+          poster_path: movie.poster_path,
+          providers
         };
       })
     );
 
-    res.json({ filmes });
+    res.json(filmesComProvedores);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ erro: "Erro ao buscar dados" });
+    res.status(500).json({ error: "Erro no servidor" });
   }
 });
 
-app.listen(3000, () => console.log("Servidor rodando na porta 3000"));
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+});
