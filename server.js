@@ -1,4 +1,10 @@
 // server.js
+
+// 1. Carrega variáveis de ambiente
+import dotenv from "dotenv";
+dotenv.config(); // Isso precisa vir logo no início
+
+// 2. Agora importa o resto
 import express from "express";
 import fetch from "node-fetch";
 import OpenAI from "openai";
@@ -8,14 +14,31 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_KEY });
+// 3. Usa as variáveis
+console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY); // teste
+console.log("TMDB_KEY:", process.env.TMDB_KEY);
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const tmdbKey = process.env.TMDB_KEY;
+
+// resto do código...
+
+
+// Função para buscar provedores de streaming
+async function getStreamingProviders(movieId) {
+  const url = `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${tmdbKey}`;
+  const resp = await fetch(url);
+  const data = await resp.json();
+  
+  // Retorna apenas provedores no Brasil
+  return data.results?.BR?.flatrate?.map(p => p.provider_name) || [];
+}
 
 app.post("/recomendar", async (req, res) => {
   const humor = req.body.humor;
 
   try {
-    // 1. IA interpreta o humor
+    // 1. IA interpreta o humor e sugere gêneros
     const iaResp = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -32,7 +55,15 @@ app.post("/recomendar", async (req, res) => {
     const filmesResp = await fetch(tmdbUrl);
     const filmes = await filmesResp.json();
 
-    res.json(filmes.results);
+    // 3. Adiciona informações de streaming a cada filme
+    const filmesComStreaming = await Promise.all(
+      filmes.results.map(async filme => {
+        const providers = await getStreamingProviders(filme.id);
+        return { ...filme, streaming: providers };
+      })
+    );
+
+    res.json(filmesComStreaming);
 
   } catch (err) {
     console.error(err);
@@ -41,9 +72,3 @@ app.post("/recomendar", async (req, res) => {
 });
 
 app.listen(3000, () => console.log("Servidor rodando na porta 3000"));
-
-import dotenv from "dotenv";
-dotenv.config();
-
-console.log("OpenAI Key:", process.env.OPENAI_KEY);
-console.log("TMDB Key:", process.env.TMDB_KEY);

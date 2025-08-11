@@ -62,6 +62,11 @@
       font-size: 14px;
       color: #ccc;
     }
+    .streamings {
+      font-size: 12px;
+      margin-top: 8px;
+      color: #1DB954;
+    }
   </style>
 </head>
 <body>
@@ -72,46 +77,37 @@
   <div class="filmes" id="listaFilmes"></div>
 
   <script>
-    const apiKey = "0d362601b04741566e35e6417a78da9a"; // coloque sua API Key do TMDB aqui
-
-    // Mapeamento básico de sentimentos para palavras-chave
-    const mapaHumor = {
-      feliz: "comedy",
-      triste: "drama",
-      animado: "action",
-      cansado: "romance",
-      assustado: "horror",
-      inspirado: "adventure",
-      pensativo: "mystery"
-    };
-
     async function recomendar() {
-      const humor = document.getElementById('humorInput').value.toLowerCase();
+      const humor = document.getElementById('humorInput').value.trim();
       const lista = document.getElementById('listaFilmes');
       lista.innerHTML = "<p>Carregando...</p>";
 
-      // Define a palavra-chave a buscar
-      const palavraChave = mapaHumor[humor] || humor;
-
-      const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(palavraChave)}&language=pt-BR`;
-
       try {
-        const resposta = await fetch(url);
-        const dados = await resposta.json();
+        const resposta = await fetch("http://localhost:3000/recomendar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ humor })
+        });
 
+        const dados = await resposta.json();
         lista.innerHTML = "";
 
-        if (dados.results.length > 0) {
-          dados.results.forEach(filme => {
+        if (dados.length > 0) {
+          dados.forEach(filme => {
             const poster = filme.poster_path 
               ? `https://image.tmdb.org/t/p/w200${filme.poster_path}`
               : "https://via.placeholder.com/200x300?text=Sem+Imagem";
+
+            const streamings = filme.streaming && filme.streaming.length > 0
+              ? filme.streaming.join(", ")
+              : "Não disponível em streaming";
 
             lista.innerHTML += `
               <div class="filme">
                 <img src="${poster}" alt="${filme.title}">
                 <h3>${filme.title}</h3>
                 <p>${filme.overview || "Sem descrição disponível."}</p>
+                <div class="streamings">Disponível em: ${streamings}</div>
               </div>
             `;
           });
