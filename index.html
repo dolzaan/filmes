@@ -20,7 +20,7 @@
     </button>
   </div>
 
-  <div id="results" class="mt-6 w-full max-w-lg flex flex-wrap gap-4 justify-center"></div>
+  <div id="results" class="mt-6 w-full max-w-5xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
 
   <script>
     document.getElementById("searchBtn").addEventListener("click", async () => {
@@ -33,23 +33,49 @@
         return;
       }
 
-      const res = await fetch(`http://localhost:3000/streaming/${encodeURIComponent(movie)}`);
-      const data = await res.json();
+      try {
+        const res = await fetch(`http://localhost:3000/streaming/${encodeURIComponent(movie)}`);
+        const data = await res.json();
 
-      if (!data.providers.length) {
-        resultsDiv.innerHTML = "<p class='text-gray-300'>Não encontrado em streaming no Brasil.</p>";
-        return;
+        if (!data.filmes || data.filmes.length === 0) {
+          resultsDiv.innerHTML = "<p class='text-gray-400'>Nenhum filme encontrado.</p>";
+          return;
+        }
+
+        data.filmes.forEach(filme => {
+          const filmeDiv = document.createElement("div");
+          filmeDiv.className = "bg-gray-800 p-4 rounded-lg shadow-lg";
+
+          let provedoresHTML = "";
+          if (filme.provedores && filme.provedores.length > 0) {
+            provedoresHTML = `
+              <div class="flex gap-4 mt-3 flex-wrap">
+                ${filme.provedores.map(p => `
+                  <div class="flex flex-col items-center">
+                    <img src="${p.logo}" alt="${p.nome}" class="w-12 h-12 mb-1 rounded">
+                    <span class="text-sm">${p.nome}</span>
+                  </div>
+                `).join("")}
+              </div>
+            `;
+          } else {
+            provedoresHTML = `<p class="text-sm text-gray-400 mt-3">Nenhum provedor encontrado</p>`;
+          }
+
+          filmeDiv.innerHTML = `
+  ${filme.capa ? `<img src="${filme.capa}" alt="${filme.titulo}" class="w-full rounded mb-3">` : ""}
+  <h2 class="text-xl font-semibold">${filme.titulo}</h2>
+  <p class="text-gray-300 mt-2">${filme.descricao || "Sem descrição disponível."}</p>
+  ${provedoresHTML}
+`;
+
+
+          resultsDiv.appendChild(filmeDiv);
+        });
+      } catch (err) {
+        console.error(err);
+        resultsDiv.innerHTML = "<p class='text-red-400'>Erro ao buscar dados.</p>";
       }
-
-      data.providers.forEach(p => {
-        const div = document.createElement("div");
-        div.className = "flex flex-col items-center bg-gray-800 p-4 rounded-lg shadow";
-        div.innerHTML = `
-          <img src="https://image.tmdb.org/t/p/original${p.logo_path}" alt="${p.provider_name}" class="w-16 h-16 mb-2 rounded">
-          <p>${p.provider_name}</p>
-        `;
-        resultsDiv.appendChild(div);
-      });
     });
   </script>
 </body>
