@@ -40,7 +40,7 @@
       }
   
       try {
-        const res = await fetch(`/api/streaming?movie=${encodeURIComponent(nomeDoFilme)}`)
+        const res = await fetch(`${API_BASE}/api/streaming?movie=${encodeURIComponent(movie)}`);
 
         if (!res.ok) {
           const text = await res.text();
@@ -53,22 +53,20 @@
         console.log("Resposta da API:", data);
   
         // Normaliza o array de filmes (aceita 1 ou vários)
-let filmesArray = [];
-
-if (Array.isArray(data)) {
-  filmesArray = data;
-} else if (Array.isArray(data.filmes)) {
-  filmesArray = data.filmes;
-} else if (Array.isArray(data.results)) {
-  filmesArray = data.results;
-} else if (Array.isArray(data.data)) {
-  filmesArray = data.data;
-} else if (data && typeof data === "object") {
-  filmesArray = [data]; // 👈 transforma único filme em array
-} else {
-  filmesArray = [];
-}
-
+        let filmesArray = [];
+        if (Array.isArray(data)) {
+          filmesArray = data;
+        } else if (Array.isArray(data.filmes)) {
+          filmesArray = data.filmes;
+        } else if (Array.isArray(data.results)) {
+          filmesArray = data.results;
+        } else if (Array.isArray(data.data)) {
+          filmesArray = data.data;
+        } else if (data && typeof data === "object") {
+          filmesArray = [data];
+        } else {
+          filmesArray = [];
+        }
   
         if (filmesArray.length === 0) {
           resultsDiv.innerHTML = "<p class='text-gray-400'>Nenhum filme encontrado.</p>";
