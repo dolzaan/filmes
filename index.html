@@ -40,7 +40,8 @@
       }
   
       try {
-        const res = await fetch(`${API_BASE}/streaming/${encodeURIComponent(movie)}`);
+        const res = await fetch(`/api/streaming?movie=${encodeURIComponent(nomeDoFilme)}`)
+
         if (!res.ok) {
           const text = await res.text();
           console.error("Erro da API:", res.status, text);
