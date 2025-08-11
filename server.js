@@ -1,74 +1,60 @@
-// server.js
-
-// 1. Carrega variáveis de ambiente
-import dotenv from "dotenv";
-dotenv.config(); // Isso precisa vir logo no início
-
-// 2. Agora importa o resto
 import express from "express";
 import fetch from "node-fetch";
-import OpenAI from "openai";
+import dotenv from "dotenv";
 import cors from "cors";
 
+// Carrega variáveis de ambiente
+dotenv.config();
+
+// Inicializa o app
 const app = express();
+
+// Middlewares
 app.use(cors());
+app.use(express.static("public"));
 app.use(express.json());
 
-// 3. Usa as variáveis
-console.log("OPENAI_API_KEY:", process.env.OPENAI_API_KEY); // teste
-console.log("TMDB_KEY:", process.env.TMDB_KEY);
+// Rota para buscar provedores de streaming
+app.get("/streaming/:movie", async (req, res) => {
+  const movieName = req.params.movie;
+  const apiKey = process.env.TMDB_KEY;
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const tmdbKey = process.env.TMDB_KEY;
-
-// resto do código...
-
-
-// Função para buscar provedores de streaming
-async function getStreamingProviders(movieId) {
-  const url = `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${tmdbKey}`;
-  const resp = await fetch(url);
-  const data = await resp.json();
-  
-  // Retorna apenas provedores no Brasil
-  return data.results?.BR?.flatrate?.map(p => p.provider_name) || [];
-}
-
-app.post("/recomendar", async (req, res) => {
-  const humor = req.body.humor;
+  if (!apiKey) {
+    return res.status(500).json({ error: "TMDB_KEY não configurada" });
+  }
 
   try {
-    // 1. IA interpreta o humor e sugere gêneros
-    const iaResp = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "Você é um assistente que recebe descrições de humor e sugere gêneros de filmes em inglês para usar no TMDB." },
-        { role: "user", content: `Humor do usuário: ${humor}` }
-      ],
-      temperature: 0.7
-    });
-
-    const generos = iaResp.choices[0].message.content;
-
-    // 2. Busca no TMDB com base nos gêneros
-    const tmdbUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbKey}&query=${encodeURIComponent(generos)}&language=pt-BR`;
-    const filmesResp = await fetch(tmdbUrl);
-    const filmes = await filmesResp.json();
-
-    // 3. Adiciona informações de streaming a cada filme
-    const filmesComStreaming = await Promise.all(
-      filmes.results.map(async filme => {
-        const providers = await getStreamingProviders(filme.id);
-        return { ...filme, streaming: providers };
-      })
+    // 1️⃣ Buscar ID do filme
+    const searchRes = await fetch(
+      `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(
+        movieName
+      )}&language=pt-BR`
     );
+    const searchData = await searchRes.json();
 
-    res.json(filmesComStreaming);
+    if (!searchData.results.length) {
+      return res.json({ providers: [] });
+    }
 
+    const movieId = searchData.results[0].id;
+
+    // 2️⃣ Buscar provedores de streaming
+    const providersRes = await fetch(
+      `https://api.themoviedb.org/3/movie/${movieId}/watch/providers?api_key=${apiKey}`
+    );
+    const providersData = await providersRes.json();
+
+    const providers = providersData.results.BR?.flatrate || [];
+
+    res.json({ providers });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ erro: "Erro ao buscar filmes" });
+    res.status(500).json({ error: "Erro ao buscar dados" });
   }
 });
 
-app.listen(3000, () => console.log("Servidor rodando na porta 3000"));
+// Inicia o servidor
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor rodando em http://localhost:${PORT}`);
+});

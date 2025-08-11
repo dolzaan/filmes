@@ -1,125 +1,56 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎬 Filmes por Humor</title>
-  <style>
-    body {
-      background-color: #121212;
-      color: white;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    h1 {
-      color: #1DB954;
-    }
-    input {
-      width: 400px;
-      padding: 10px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      background: #1DB954;
-      color: white;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    .filmes {
-      margin-top: 20px;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 15px;
-      width: 100%;
-      max-width: 1000px;
-    }
-    .filme {
-      background: #1e1e1e;
-      padding: 10px;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-    .filme img {
-      width: 100%;
-      border-radius: 8px;
-    }
-    .filme h3 {
-      margin: 10px 0 5px;
-    }
-    .filme p {
-      font-size: 14px;
-      color: #ccc;
-    }
-    .streamings {
-      font-size: 12px;
-      margin-top: 8px;
-      color: #1DB954;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Onde Assistir</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>🎬 Recomendações de Filmes pelo seu Humor</h1>
-  <input id="humorInput" placeholder="Digite como você está se sentindo...">
-  <button onclick="recomendar()">Buscar Filmes</button>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+  <h1 class="text-3xl font-bold mb-6 flex items-center gap-2">
+    🔍 Descubra onde assistir seu filme
+  </h1>
 
-  <div class="filmes" id="listaFilmes"></div>
+  <div class="flex flex-col items-center w-full max-w-md">
+    <input id="movieInput" type="text" placeholder="Digite o nome do filme"
+      class="w-full p-3 rounded-lg text-black mb-4 outline-none" />
+    <button id="searchBtn"
+      class="bg-green-500 px-6 py-2 rounded-lg hover:bg-green-600 transition">
+      Buscar
+    </button>
+  </div>
+
+  <div id="results" class="mt-6 w-full max-w-lg flex flex-wrap gap-4 justify-center"></div>
 
   <script>
-    async function recomendar() {
-      const humor = document.getElementById('humorInput').value.trim();
-      const lista = document.getElementById('listaFilmes');
-      lista.innerHTML = "<p>Carregando...</p>";
+    document.getElementById("searchBtn").addEventListener("click", async () => {
+      const movie = document.getElementById("movieInput").value.trim();
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
 
-      try {
-        const resposta = await fetch("http://localhost:3000/recomendar", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ humor })
-        });
-
-        const dados = await resposta.json();
-        lista.innerHTML = "";
-
-        if (dados.length > 0) {
-          dados.forEach(filme => {
-            const poster = filme.poster_path 
-              ? `https://image.tmdb.org/t/p/w200${filme.poster_path}`
-              : "https://via.placeholder.com/200x300?text=Sem+Imagem";
-
-            const streamings = filme.streaming && filme.streaming.length > 0
-              ? filme.streaming.join(", ")
-              : "Não disponível em streaming";
-
-            lista.innerHTML += `
-              <div class="filme">
-                <img src="${poster}" alt="${filme.title}">
-                <h3>${filme.title}</h3>
-                <p>${filme.overview || "Sem descrição disponível."}</p>
-                <div class="streamings">Disponível em: ${streamings}</div>
-              </div>
-            `;
-          });
-        } else {
-          lista.innerHTML = "<p>Não encontrei filmes para esse humor 😢</p>";
-        }
-
-      } catch (erro) {
-        lista.innerHTML = "<p>Erro ao buscar filmes. Tente novamente.</p>";
-        console.error("Erro:", erro);
+      if (!movie) {
+        resultsDiv.innerHTML = "<p class='text-red-400'>Digite um nome válido.</p>";
+        return;
       }
-    }
+
+      const res = await fetch(`http://localhost:3000/streaming/${encodeURIComponent(movie)}`);
+      const data = await res.json();
+
+      if (!data.providers.length) {
+        resultsDiv.innerHTML = "<p class='text-gray-300'>Não encontrado em streaming no Brasil.</p>";
+        return;
+      }
+
+      data.providers.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "flex flex-col items-center bg-gray-800 p-4 rounded-lg shadow";
+        div.innerHTML = `
+          <img src="https://image.tmdb.org/t/p/original${p.logo_path}" alt="${p.provider_name}" class="w-16 h-16 mb-2 rounded">
+          <p>${p.provider_name}</p>
+        `;
+        resultsDiv.appendChild(div);
+      });
+    });
   </script>
 </body>
 </html>
