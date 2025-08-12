@@ -5,25 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Busca de Filmes</title>
   <script src="https://cdn.tailwindcss.com"></script>
-</head>
-
-<style>
-  @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
-
-<body class="bg-[radial-gradient(circle_at_top_right,_#f5a623,_#d8b4fe,_#a78bfa)] text-white">
+</head>
+<body class="flex flex-col min-h-screen bg-gradient-to-r from-purple-300 via-purple-200 to-pink-200">
 
   <!-- Container principal -->
-  <div id="mainContainer" class="flex flex-col justify-center items-center min-h-screen transition-all duration-500 bg-gradient-to-r from-purple-300 via-purple-200 to-pink-200 px-4">
+  <div id="mainContainer" class="flex flex-col items-center justify-center flex-grow transition-all duration-500 px-4">
 
-    <!-- Frase animada -->
-    <div id="dynamicText" class="mb-4 text-3xl font-semibold text-gray-700 h-10 transition-opacity duration-500"></div>
+    <!-- Texto animado -->
+    <div id="dynamicText" class="mb-4 text-3xl font-semibold text-gray-700 h-10"></div>
     
-    <!-- Caixa de input com botão -->
-    <div class="relative w-full max-w-md">
+    <!-- Caixa de input -->
+    <div class="relative w-full max-w-md mb-6">
       <input
         id="movieInput"
         type="text"
@@ -36,228 +34,153 @@
       >
         Buscar
       </button>
-      <div id="results" class="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 hidden"></div>
     </div>
-  </div>
 
- 
+    <!-- Resultados -->
+    <div id="results" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 hidden"></div>
+
+  </div>
 
   <script>
     // Detecta ambiente automaticamente
-    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-  
+    const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
     const API_BASE = isLocal
-      ? "http://localhost:3000" // Backend rodando local
-      : "https://onde-assistir-meu-filme.vercel.app"; // Backend no Vercel
-  
-    console.log("Usando API_BASE:", API_BASE);
-  
-    document.getElementById("searchBtn").addEventListener("click", async () => {
-      const movie = document.getElementById("movieInput").value.trim();
-      const resultsDiv = document.getElementById("results");
+      ? "http://localhost:3000"
+      : "https://onde-assistir-meu-filme.vercel.app";
+
+    const mainContainer = document.getElementById("mainContainer");
+    const resultsDiv = document.getElementById("results");
+    const searchBtn = document.getElementById("searchBtn");
+    const movieInput = document.getElementById("movieInput");
+
+    searchBtn.addEventListener("click", buscarFilmes);
+
+    async function buscarFilmes() {
+      const movie = movieInput.value.trim();
       resultsDiv.innerHTML = "";
-  
+
       if (!movie) {
         resultsDiv.innerHTML = "<p class='text-red-400'>Digite um nome válido.</p>";
+        resultsDiv.classList.remove("hidden");
         return;
       }
-  
+
       try {
         const res = await fetch(`${API_BASE}/api/streaming?movie=${encodeURIComponent(movie)}`);
 
         if (!res.ok) {
-          const text = await res.text();
-          console.error("Erro da API:", res.status, text);
           resultsDiv.innerHTML = `<p class='text-red-400'>Erro: ${res.status} ao consultar a API.</p>`;
+          resultsDiv.classList.remove("hidden");
           return;
         }
-  
+
         const data = await res.json();
-        console.log("Resposta da API:", data);
-  
-        // Normaliza o array de filmes (aceita 1 ou vários)
-        let filmesArray = [];
-        if (Array.isArray(data)) {
-          filmesArray = data;
-        } else if (Array.isArray(data.filmes)) {
-          filmesArray = data.filmes;
-        } else if (Array.isArray(data.results)) {
-          filmesArray = data.results;
-        } else if (Array.isArray(data.data)) {
-          filmesArray = data.data;
-        } else if (data && typeof data === "object") {
-          filmesArray = [data];
-        } else {
-          filmesArray = [];
-        }
-  
+        let filmesArray = Array.isArray(data) ? data :
+                          Array.isArray(data.filmes) ? data.filmes :
+                          Array.isArray(data.results) ? data.results :
+                          Array.isArray(data.data) ? data.data :
+                          data && typeof data === "object" ? [data] : [];
+
         if (filmesArray.length === 0) {
           resultsDiv.innerHTML = "<p class='text-gray-400'>Nenhum filme encontrado.</p>";
-          return;
-        }
-  
-        resultsDiv.className = "p-6 grid grid-cols-1 md:grid-cols-3 gap-4";
-        resultsDiv.innerHTML = "";
-  
-        filmesArray.forEach((filme, index) => {
-  const title = filme.title || filme.titulo || filme.name || "Título indisponível";
-  const overview = filme.overview || filme.descricao || filme.plot || "";
-  const posterPath = filme.poster_path || filme.poster || filme.capa || null;
-  const posterUrl = posterPath
-    ? (posterPath.startsWith("http") ? posterPath : `https://image.tmdb.org/t/p/w300${posterPath}`)
-    : "https://via.placeholder.com/300x450?text=Sem+Capa";
+        } else {
+          resultsDiv.innerHTML = "";
+          filmesArray.forEach((filme, index) => {
+            const title = filme.title || filme.titulo || filme.name || "Título indisponível";
+            const overview = filme.overview || filme.descricao || filme.plot || "";
+            const posterPath = filme.poster_path || filme.poster || filme.capa || "";
+            const posterUrl = posterPath
+              ? (posterPath.startsWith("http") ? posterPath : `https://image.tmdb.org/t/p/w300${posterPath}`)
+              : "https://via.placeholder.com/300x450?text=Sem+Capa";
 
-  let providersArr = [];
-  if (Array.isArray(filme.providers)) providersArr = filme.providers;
-  else if (Array.isArray(filme.provedores)) providersArr = filme.provedores;
-  else if (Array.isArray(filme.providersData)) providersArr = filme.providersData;
+            let providersArr = Array.isArray(filme.providers) ? filme.providers :
+                              Array.isArray(filme.provedores) ? filme.provedores :
+                              Array.isArray(filme.providersData) ? filme.providersData : [];
 
-  providersArr = providersArr.map(p => ({
-    name: p.provider_name || p.nome || p.name || "Provedor",
-    logo: p.logo_path
-      ? (p.logo_path.startsWith("http") ? p.logo_path : `https://image.tmdb.org/t/p/original${p.logo_path}`)
-      : (p.logo || null)
-  }));
+            providersArr = providersArr.map(p => ({
+              name: p.provider_name || p.nome || p.name || "Provedor",
+              logo: p.logo_path
+                ? (p.logo_path.startsWith("http") ? p.logo_path : `https://image.tmdb.org/t/p/original${p.logo_path}`)
+                : (p.logo || null)
+            }));
 
-  const providersHTML = providersArr.length
-    ? `<div class="flex gap-3 mt-3 flex-wrap justify-center">
-         ${providersArr.map(pr => `
-           <div class="flex flex-col items-center text-xs">
-             ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-10 h-10 mb-1 rounded">` : ""}
-             <span class="text-sm">${pr.name}</span>
-           </div>
-         `).join("")}
-       </div>`
-    : `<p class="text-sm text-gray-400 mt-3">Nenhum provedor encontrado</p>`;
+            const providersHTML = providersArr.length
+              ? `<div class="flex gap-3 mt-3 flex-wrap justify-center">
+                  ${providersArr.map(pr => `
+                    <div class="flex flex-col items-center text-xs">
+                      ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-10 h-10 mb-1 rounded">` : ""}
+                      <span class="text-sm">${pr.name}</span>
+                    </div>`).join("")}
+                 </div>`
+              : `<p class="text-sm text-gray-400 mt-3">Nenhum provedor encontrado</p>`;
 
-  const delayClass = `delay-[${index * 100}ms]`; // 100ms de atraso por card
+            const delayClass = `delay-[${index * 100}ms]`;
 
-  const card = document.createElement("div");
-  card.className = `bg-gray-800 p-4 rounded-lg shadow flex flex-col items-center opacity-0 animate-[fadeInUp_0.5s_ease-out_forwards] ${delayClass}`;
-  card.innerHTML = `
-    <img src="${posterUrl}" alt="${title}" class="w-full rounded mb-3 object-cover">
-    <h2 class="text-lg font-semibold text-center">${title}</h2>
-    <p class="text-sm mt-2 text-gray-300">${overview || "Sem descrição disponível."}</p>
-    ${providersHTML}
-  `;
-  resultsDiv.appendChild(card);
-});
-}
-      catch (err) {
-        console.error("Erro no frontend:", err);
-        resultsDiv.innerHTML = "<p class='text-red-400'>Erro ao buscar filme. Veja o console.</p>";
-      }
-    });
-  </script>
-
-<script>
-  const frases = [
-    "O que vamos ver hoje?",
-    "Onde tá passando esse filme?",
-    "Em qual streaming posso assistir?",
-    "Qual o melhor lugar para ver?",
-    "Onde posso encontrar esse filme?",
-    "Qual o gênero do dia?",
-    "Qual filme vamos assistir hoje?",
-    "Qual o filme da vez?",
-    "Qual o filme do dia?",
-    "Qual o filme do final de semana?",
-  ];
-
-  let i = 0; // índice da frase
-  let j = 0; // índice do caractere
-  let apagando = false;
-  const speed = 100; // velocidade da digitação (ms)
-  const eraseSpeed = 50; // velocidade para apagar
-  const delayEntreFrases = 1500; // pausa antes de apagar
-
-  const dynamicText = document.getElementById("dynamicText");
-
-  function typeEffect() {
-    const fraseAtual = frases[i];
-
-    if (!apagando) {
-      // Digitando
-      dynamicText.textContent = fraseAtual.slice(0, j + 1);
-      j++;
-
-      if (j === fraseAtual.length) {
-        apagando = true;
-        setTimeout(typeEffect, delayEntreFrases);
-        return;
-      }
-    } else {
-      // Apagando
-      dynamicText.textContent = fraseAtual.slice(0, j - 1);
-      j--;
-
-      if (j === 0) {
-        apagando = false;
-        i = (i + 1) % frases.length;
-      }
-    }
-
-    setTimeout(typeEffect, apagando ? eraseSpeed : speed);
-  }
-
-  typeEffect();
-</script>
-
-<script>
-  const searchBtn = document.getElementById("searchBtn");
-  const mainContainer = document.getElementById("mainContainer");
-  const resultsDiv = document.getElementById("results");
-
-  searchBtn.addEventListener("click", async () => {
-    const movie = document.getElementById("movieInput").value.trim();
-    resultsDiv.innerHTML = "";
-
-    if (!movie) {
-      resultsDiv.innerHTML = "<p class='text-red-400'>Digite um nome válido.</p>";
-      resultsDiv.classList.remove("hidden");
-      return;
-    }
-
-    try {
-      const res = await fetch(`${API_BASE}/api/streaming?movie=${encodeURIComponent(movie)}`);
-      const data = await res.json();
-
-      let filmesArray = Array.isArray(data) ? data : 
-                        Array.isArray(data.filmes) ? data.filmes : 
-                        Array.isArray(data.results) ? data.results :
-                        Array.isArray(data.data) ? data.data : 
-                        data && typeof data === "object" ? [data] : [];
-
-      if (filmesArray.length === 0) {
-        resultsDiv.innerHTML = "<p class='text-gray-400'>Nenhum filme encontrado.</p>";
-      } else {
-        resultsDiv.innerHTML = filmesArray.map(filme => {
-          const title = filme.title || filme.titulo || "Título indisponível";
-          const posterPath = filme.poster_path || filme.poster || filme.capa || "";
-          const posterUrl = posterPath.startsWith("http") ? posterPath : `https://image.tmdb.org/t/p/w300${posterPath}`;
-          return `
-            <div class="bg-gray-800 p-4 rounded-lg shadow flex flex-col items-center">
+            const card = document.createElement("div");
+            card.className = `bg-gray-800 p-4 rounded-lg shadow flex flex-col items-center opacity-0 animate-[fadeInUp_0.5s_ease-out_forwards] ${delayClass}`;
+            card.innerHTML = `
               <img src="${posterUrl}" alt="${title}" class="w-full rounded mb-3 object-cover">
               <h2 class="text-lg font-semibold text-center">${title}</h2>
-            </div>
-          `;
-        }).join("");
+              <p class="text-sm mt-2 text-gray-300">${overview || "Sem descrição disponível."}</p>
+              ${providersHTML}
+            `;
+            resultsDiv.appendChild(card);
+          });
+        }
+
+        resultsDiv.classList.remove("hidden");
+        mainContainer.classList.remove("justify-center");
+        mainContainer.classList.add("justify-start", "pt-10");
+
+      } catch (err) {
+        resultsDiv.innerHTML = "<p class='text-red-400'>Erro ao buscar filme.</p>";
+        resultsDiv.classList.remove("hidden");
       }
-
-      resultsDiv.classList.remove("hidden");
-      // Move a busca para o topo
-      mainContainer.classList.remove("justify-center");
-      mainContainer.classList.add("justify-start", "pt-10");
-
-    } catch (err) {
-      resultsDiv.innerHTML = "<p class='text-red-400'>Erro ao buscar filme.</p>";
-      resultsDiv.classList.remove("hidden");
     }
-  });
-</script>
 
-<footer class="bg-transparent text-center text-gray-600 text-sm py-4">
-  © 2025 Paulo Cesar Dolzan — Todos os direitos reservados
-</footer>
+    // Texto animado
+    const frases = [
+      "O que vamos ver hoje?",
+      "Onde tá passando esse filme?",
+      "Em qual streaming posso assistir?",
+      "Qual o melhor lugar para ver?",
+      "Onde posso encontrar esse filme?",
+      "Qual o gênero do dia?",
+      "Qual filme vamos assistir hoje?",
+      "Qual o filme da vez?",
+      "Qual o filme do dia?",
+      "Qual o filme do final de semana?",
+    ];
+
+    let i = 0, j = 0, apagando = false;
+    const speed = 100, eraseSpeed = 50, delayEntreFrases = 1500;
+    const dynamicText = document.getElementById("dynamicText");
+
+    function typeEffect() {
+      const fraseAtual = frases[i];
+      if (!apagando) {
+        dynamicText.textContent = fraseAtual.slice(0, j + 1);
+        j++;
+        if (j === fraseAtual.length) {
+          apagando = true;
+          setTimeout(typeEffect, delayEntreFrases);
+          return;
+        }
+      } else {
+        dynamicText.textContent = fraseAtual.slice(0, j - 1);
+        j--;
+        if (j === 0) {
+          apagando = false;
+          i = (i + 1) % frases.length;
+        }
+      }
+      setTimeout(typeEffect, apagando ? eraseSpeed : speed);
+    }
+    typeEffect();
+  </script>
+
+  <footer class="bg-transparent text-center text-gray-600 text-sm py-4">
+    © 2025 Paulo Cesar Dolzan — Todos os direitos reservados
+  </footer>
 </body>
 </html>
