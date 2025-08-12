@@ -109,7 +109,7 @@
                   ${providersArr.map(pr => `
                     <div class="flex flex-col items-center text-xs">
                       ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-10 h-10 mb-1 rounded">` : ""}
-                      <span class="text-sm">${pr.name}</span>
+                      <span class="text-sm text-[#d1b3ff]">${pr.name}</span>
                     </div>`).join("")}
                  </div>`
               : `<p class="text-sm text-[#d1b3ff] mt-3">Nenhum provedor encontrado</p>`;
