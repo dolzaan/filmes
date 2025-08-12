@@ -8,19 +8,22 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(20px); }
+      from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
+
+<!-- Vercel Analytics -->
 <script defer src="/_vercel/insights/script.js"></script>
+
 <body class="flex flex-col min-h-screen bg-gradient-to-r from-purple-300 via-purple-200 to-pink-200">
 
   <!-- Container principal -->
   <div id="mainContainer" class="flex flex-col items-center justify-center flex-grow transition-all duration-700 ease-in-out px-4">
 
-    <!-- Texto animado -->
-    <div id="dynamicText" class="mb-4 text-3xl font-semibold text-gray-700 h-10"></div>
+    <!-- Texto animado responsivo -->
+    <div id="dynamicText" class="mb-4 text-xl sm:text-2xl md:text-4xl font-semibold text-gray-700 h-12 text-center leading-tight break-words"></div>
     
     <!-- Caixa de input -->
     <div class="relative w-full max-w-md mb-6">
@@ -44,7 +47,6 @@
   </div>
 
   <script>
-    // Detecta ambiente automaticamente
     const isLocal = ["localhost", "127.0.0.1"].includes(window.location.hostname);
     const API_BASE = isLocal
       ? "http://localhost:3000"
@@ -116,25 +118,24 @@
                  </div>`
               : `<p class="text-sm text-[#d1b3ff] mt-3">Nenhum provedor encontrado</p>`;
 
-            const delayClass = `delay-[${index * 100}ms]`;
+            const delayClass = `delay-[${index * 150}ms]`;
             const card = document.createElement("div");
-card.className = `
-  bg-[#4a2c4f]/90 p-4 rounded-lg shadow flex flex-col items-center 
-  w-40 sm:w-48 md:w-56 lg:w-64
-  opacity-0 animate-[fadeInUp_0.5s_ease-out_forwards] text-shadow: 0 0 6px rgba(243, 233, 255, 0.6);
-  ${delayClass}
-`;
-card.innerHTML = `
-  <img src="${posterUrl}" alt="${title}" 
-       class="w-full h-56 sm:h-64 md:h-72 lg:h-80 rounded mb-3 object-cover">
-  <h2 class="text-[#f3e9ff] sm:text-lg font-semibold text-center">${title}</h2>
-  <p class="text-xs sm:text-sm mt-2 text-gray-300">
-    ${overview || "Sem descrição disponível."}
-  </p>
-  ${providersHTML}
-`;
-resultsDiv.appendChild(card);
-
+            card.className = `
+              bg-[#4a2c4f]/90 p-4 rounded-lg shadow flex flex-col items-center 
+              w-40 sm:w-48 md:w-56 lg:w-64
+              opacity-0 animate-[fadeInUp_0.8s_ease-out_forwards] 
+              ${delayClass}
+            `;
+            card.innerHTML = `
+              <img src="${posterUrl}" alt="${title}" 
+                  class="w-full h-56 sm:h-64 md:h-72 lg:h-80 rounded mb-3 object-cover">
+              <h2 class="text-[#f3e9ff] sm:text-lg font-semibold text-center">${title}</h2>
+              <p class="text-xs sm:text-sm mt-2 text-gray-300">
+                ${overview || "Sem descrição disponível."}
+              </p>
+              ${providersHTML}
+            `;
+            resultsDiv.appendChild(card);
           });
         }
 
@@ -163,7 +164,7 @@ resultsDiv.appendChild(card);
     ];
 
     let i = 0, j = 0, apagando = false;
-    const speed = 100, eraseSpeed = 50, delayEntreFrases = 1500;
+    const speed = 80, eraseSpeed = 50, delayEntreFrases = 1800;
     const dynamicText = document.getElementById("dynamicText");
 
     function typeEffect() {
