@@ -6,15 +6,28 @@
   <title>Busca de Filmes</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white">
+<body class="bg-[radial-gradient(circle_at_top_right,_#f5a623,_#d8b4fe,_#a78bfa)] text-white">
 
-  <div class="p-6">
-    <input id="movieInput" type="text" placeholder="Digite o nome do filme"
-      class="p-2 rounded text-black w-full max-w-md" />
-    <button id="searchBtn"
-      class="ml-2 bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded">
-      Buscar
-    </button>
+  <div class="flex flex-col justify-center items-center min-h-screen bg-gradient-to-r from-purple-300 via-purple-200 to-pink-200 px-4">
+  
+    <!-- Frase animada maior -->
+    <div id="dynamicText" class="mb-4 text-3xl font-semibold text-gray-700 h-10 transition-opacity duration-500"></div>
+    
+    <!-- Caixa de input com botão -->
+    <div class="relative w-full max-w-md">
+      <input
+        id="movieInput"
+        type="text"
+        placeholder="O que você quer assistir hoje?"
+        class="w-full px-5 py-3 pr-20 rounded-full border border-gray-300 shadow-sm text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+      <button
+        id="searchBtn"
+        class="absolute right-3 top-1/2 -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-full shadow-sm focus:outline-none"
+      >
+        Buscar
+      </button>
+    </div>
   </div>
 
   <div id="results" class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
@@ -124,7 +137,61 @@
       }
     });
   </script>
-  
 
+<script>
+  const frases = [
+    "O que vamos ver hoje?",
+    "Onde tá passando esse filme?",
+    "Em qual streaming posso assistir?",
+    "Qual o melhor lugar para ver?",
+    "Onde posso encontrar esse filme?",
+    "Qual o gênero do dia?",
+    "Qual filme vamos assistir hoje?",
+    "Qual o filme da vez?",
+    "Qual o filme do dia?",
+    "Qual o filme do final de semana?",
+  ];
+
+  let i = 0; // índice da frase
+  let j = 0; // índice do caractere
+  let apagando = false;
+  const speed = 100; // velocidade da digitação (ms)
+  const eraseSpeed = 50; // velocidade para apagar
+  const delayEntreFrases = 1500; // pausa antes de apagar
+
+  const dynamicText = document.getElementById("dynamicText");
+
+  function typeEffect() {
+    const fraseAtual = frases[i];
+
+    if (!apagando) {
+      // Digitando
+      dynamicText.textContent = fraseAtual.slice(0, j + 1);
+      j++;
+
+      if (j === fraseAtual.length) {
+        apagando = true;
+        setTimeout(typeEffect, delayEntreFrases);
+        return;
+      }
+    } else {
+      // Apagando
+      dynamicText.textContent = fraseAtual.slice(0, j - 1);
+      j--;
+
+      if (j === 0) {
+        apagando = false;
+        i = (i + 1) % frases.length;
+      }
+    }
+
+    setTimeout(typeEffect, apagando ? eraseSpeed : speed);
+  }
+
+  typeEffect();
+</script>
+<footer class="absolute bottom-2 left-0 w-full text-center text-gray-600 text-sm">
+  © 2025 Paulo Cesar Dolzan — Todos os direitos reservados
+</footer>
 </body>
 </html>
