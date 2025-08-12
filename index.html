@@ -16,9 +16,10 @@
 
 <body class="bg-[radial-gradient(circle_at_top_right,_#f5a623,_#d8b4fe,_#a78bfa)] text-white">
 
-  <div class="flex flex-col justify-center items-center min-h-screen bg-gradient-to-r from-purple-300 via-purple-200 to-pink-200 px-4">
-  
-    <!-- Frase animada maior -->
+  <!-- Container principal -->
+  <div id="mainContainer" class="flex flex-col justify-center items-center min-h-screen transition-all duration-500 bg-gradient-to-r from-purple-300 via-purple-200 to-pink-200 px-4">
+
+    <!-- Frase animada -->
     <div id="dynamicText" class="mb-4 text-3xl font-semibold text-gray-700 h-10 transition-opacity duration-500"></div>
     
     <!-- Caixa de input com botão -->
@@ -38,7 +39,7 @@
     </div>
   </div>
 
-  <div id="results" class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+  <div id="results" class="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 hidden"></div>
 
   <script>
     // Detecta ambiente automaticamente
@@ -200,7 +201,61 @@
 
   typeEffect();
 </script>
-<footer class="absolute bottom-2 left-0 w-full text-center text-gray-600 text-sm">
+
+<script>
+  const searchBtn = document.getElementById("searchBtn");
+  const mainContainer = document.getElementById("mainContainer");
+  const resultsDiv = document.getElementById("results");
+
+  searchBtn.addEventListener("click", async () => {
+    const movie = document.getElementById("movieInput").value.trim();
+    resultsDiv.innerHTML = "";
+
+    if (!movie) {
+      resultsDiv.innerHTML = "<p class='text-red-400'>Digite um nome válido.</p>";
+      resultsDiv.classList.remove("hidden");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/api/streaming?movie=${encodeURIComponent(movie)}`);
+      const data = await res.json();
+
+      let filmesArray = Array.isArray(data) ? data : 
+                        Array.isArray(data.filmes) ? data.filmes : 
+                        Array.isArray(data.results) ? data.results :
+                        Array.isArray(data.data) ? data.data : 
+                        data && typeof data === "object" ? [data] : [];
+
+      if (filmesArray.length === 0) {
+        resultsDiv.innerHTML = "<p class='text-gray-400'>Nenhum filme encontrado.</p>";
+      } else {
+        resultsDiv.innerHTML = filmesArray.map(filme => {
+          const title = filme.title || filme.titulo || "Título indisponível";
+          const posterPath = filme.poster_path || filme.poster || filme.capa || "";
+          const posterUrl = posterPath.startsWith("http") ? posterPath : `https://image.tmdb.org/t/p/w300${posterPath}`;
+          return `
+            <div class="bg-gray-800 p-4 rounded-lg shadow flex flex-col items-center">
+              <img src="${posterUrl}" alt="${title}" class="w-full rounded mb-3 object-cover">
+              <h2 class="text-lg font-semibold text-center">${title}</h2>
+            </div>
+          `;
+        }).join("");
+      }
+
+      resultsDiv.classList.remove("hidden");
+      // Move a busca para o topo
+      mainContainer.classList.remove("justify-center");
+      mainContainer.classList.add("justify-start", "pt-10");
+
+    } catch (err) {
+      resultsDiv.innerHTML = "<p class='text-red-400'>Erro ao buscar filme.</p>";
+      resultsDiv.classList.remove("hidden");
+    }
+  });
+</script>
+
+<footer class="bg-transparent text-center text-gray-600 text-sm py-4">
   © 2025 Paulo Cesar Dolzan — Todos os direitos reservados
 </footer>
 </body>
