@@ -6,6 +6,14 @@
   <title>Busca de Filmes</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
+<style>
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  </style>
+
 <body class="bg-[radial-gradient(circle_at_top_right,_#f5a623,_#d8b4fe,_#a78bfa)] text-white">
 
   <div class="flex flex-col justify-center items-center min-h-screen bg-gradient-to-r from-purple-300 via-purple-200 to-pink-200 px-4">
@@ -89,49 +97,51 @@
         resultsDiv.className = "p-6 grid grid-cols-1 md:grid-cols-3 gap-4";
         resultsDiv.innerHTML = "";
   
-        filmesArray.forEach(filme => {
-          const title = filme.title || filme.titulo || filme.name || "Título indisponível";
-          const overview = filme.overview || filme.descricao || filme.plot || "";
-          const posterPath = filme.poster_path || filme.poster || filme.capa || null;
-          const posterUrl = posterPath
-            ? (posterPath.startsWith("http") ? posterPath : `https://image.tmdb.org/t/p/w300${posterPath}`)
-            : "https://via.placeholder.com/300x450?text=Sem+Capa";
-  
-          let providersArr = [];
-          if (Array.isArray(filme.providers)) providersArr = filme.providers;
-          else if (Array.isArray(filme.provedores)) providersArr = filme.provedores;
-          else if (Array.isArray(filme.providersData)) providersArr = filme.providersData;
-  
-          providersArr = providersArr.map(p => ({
-            name: p.provider_name || p.nome || p.name || "Provedor",
-            logo: p.logo_path
-              ? (p.logo_path.startsWith("http") ? p.logo_path : `https://image.tmdb.org/t/p/original${p.logo_path}`)
-              : (p.logo || null)
-          }));
-  
-          const providersHTML = providersArr.length
-            ? `<div class="flex gap-3 mt-3 flex-wrap justify-center">
-                 ${providersArr.map(pr => `
-                   <div class="flex flex-col items-center text-xs">
-                     ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-10 h-10 mb-1 rounded">` : ""}
-                     <span class="text-sm">${pr.name}</span>
-                   </div>
-                 `).join("")}
-               </div>`
-            : `<p class="text-sm text-gray-400 mt-3">Nenhum provedor encontrado</p>`;
-  
-          const card = document.createElement("div");
-          card.className = "bg-gray-800 p-4 rounded-lg shadow flex flex-col items-center";
-          card.innerHTML = `
-            <img src="${posterUrl}" alt="${title}" class="w-full rounded mb-3 object-cover">
-            <h2 class="text-lg font-semibold text-center">${title}</h2>
-            <p class="text-sm mt-2 text-gray-300">${overview || "Sem descrição disponível."}</p>
-            ${providersHTML}
-          `;
-          resultsDiv.appendChild(card);
-        });
-  
-      } catch (err) {
+        filmesArray.forEach((filme, index) => {
+  const title = filme.title || filme.titulo || filme.name || "Título indisponível";
+  const overview = filme.overview || filme.descricao || filme.plot || "";
+  const posterPath = filme.poster_path || filme.poster || filme.capa || null;
+  const posterUrl = posterPath
+    ? (posterPath.startsWith("http") ? posterPath : `https://image.tmdb.org/t/p/w300${posterPath}`)
+    : "https://via.placeholder.com/300x450?text=Sem+Capa";
+
+  let providersArr = [];
+  if (Array.isArray(filme.providers)) providersArr = filme.providers;
+  else if (Array.isArray(filme.provedores)) providersArr = filme.provedores;
+  else if (Array.isArray(filme.providersData)) providersArr = filme.providersData;
+
+  providersArr = providersArr.map(p => ({
+    name: p.provider_name || p.nome || p.name || "Provedor",
+    logo: p.logo_path
+      ? (p.logo_path.startsWith("http") ? p.logo_path : `https://image.tmdb.org/t/p/original${p.logo_path}`)
+      : (p.logo || null)
+  }));
+
+  const providersHTML = providersArr.length
+    ? `<div class="flex gap-3 mt-3 flex-wrap justify-center">
+         ${providersArr.map(pr => `
+           <div class="flex flex-col items-center text-xs">
+             ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-10 h-10 mb-1 rounded">` : ""}
+             <span class="text-sm">${pr.name}</span>
+           </div>
+         `).join("")}
+       </div>`
+    : `<p class="text-sm text-gray-400 mt-3">Nenhum provedor encontrado</p>`;
+
+  const delayClass = `delay-[${index * 100}ms]`; // 100ms de atraso por card
+
+  const card = document.createElement("div");
+  card.className = `bg-gray-800 p-4 rounded-lg shadow flex flex-col items-center opacity-0 animate-[fadeInUp_0.5s_ease-out_forwards] ${delayClass}`;
+  card.innerHTML = `
+    <img src="${posterUrl}" alt="${title}" class="w-full rounded mb-3 object-cover">
+    <h2 class="text-lg font-semibold text-center">${title}</h2>
+    <p class="text-sm mt-2 text-gray-300">${overview || "Sem descrição disponível."}</p>
+    ${providersHTML}
+  `;
+  resultsDiv.appendChild(card);
+});
+}
+      catch (err) {
         console.error("Erro no frontend:", err);
         resultsDiv.innerHTML = "<p class='text-red-400'>Erro ao buscar filme. Veja o console.</p>";
       }
