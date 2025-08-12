@@ -108,15 +108,20 @@
                 : (p.logo || null)
             }));
 
-            const providersHTML = providersArr.length
-              ? `<div class="flex gap-3 mt-3 flex-wrap justify-center">
-                  ${providersArr.map(pr => `
-                    <div class="flex flex-col items-center text-xs">
-                      ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-10 h-10 mb-1 rounded">` : ""}
-                      <span class="text-sm text-[#d1b3ff]">${pr.name}</span>
-                    </div>`).join("")}
-                 </div>`
-              : `<p class="text-sm text-[#d1b3ff] mt-3">Nenhum provedor encontrado</p>`;
+            const providersHTML = `
+  <div class="flex flex-col gap-3 mt-4">
+    ${providersArr.map(pr => `
+      <div class="flex flex-col items-center bg-white/10 rounded-lg p-3 shadow-md">
+        ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-14 h-14 mb-2 rounded">` : ""}
+        <span class="text-sm font-semibold mb-2">${pr.name}</span>
+        <a href="${pr.link}" target="_blank" rel="noopener noreferrer"
+           class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-full transition">
+          Assistir agora
+        </a>
+      </div>
+    `).join("")}
+  </div>
+`;
 
             const delayClass = `delay-[${index * 150}ms]`;
             const card = document.createElement("div");
