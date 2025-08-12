@@ -112,6 +112,7 @@
             }));
 
             const providersHTML = `
+<<<<<<< HEAD
               <div class="flex gap-3 mt-3 flex-wrap justify-center">
                 ${providersArr.map(pr => `
                   <div class="flex flex-col items-center text-xs">
@@ -127,6 +128,22 @@
               ? `<a href="${trailerUrl}" target="_blank" class="mt-4 inline-block px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm">Ver Trailer</a>` 
               : "";
 
+=======
+  <div class="flex flex-col gap-3 mt-4">
+    ${providersArr.map(pr => `
+      <div class="flex flex-col items-center bg-white/10 rounded-lg p-3 shadow-md">
+        ${pr.logo ? `<img src="${pr.logo}" alt="${pr.name}" class="w-14 h-14 mb-2 rounded">` : ""}
+        <span class="text-sm font-semibold mb-2">${pr.name}</span>
+        <a href="${pr.link}" target="_blank" rel="noopener noreferrer"
+           class="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-full transition">
+          Assistir agora
+        </a>
+      </div>
+    `).join("")}
+  </div>
+`;
+
+>>>>>>> parent of 82d1a18 (att)
             const delayClass = `delay-[${index * 150}ms]`;
             const card = document.createElement("div");
             card.className = `
