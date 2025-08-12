@@ -115,16 +115,24 @@
               : `<p class="text-sm text-gray-400 mt-3">Nenhum provedor encontrado</p>`;
 
             const delayClass = `delay-[${index * 100}ms]`;
-
             const card = document.createElement("div");
-            card.className = `bg-gray-800 p-4 rounded-lg shadow flex flex-col items-center opacity-0 animate-[fadeInUp_0.5s_ease-out_forwards] ${delayClass}`;
-            card.innerHTML = `
-              <img src="${posterUrl}" alt="${title}" class="w-full rounded mb-3 object-cover">
-              <h2 class="text-lg font-semibold text-center">${title}</h2>
-              <p class="text-sm mt-2 text-gray-300">${overview || "Sem descrição disponível."}</p>
-              ${providersHTML}
-            `;
-            resultsDiv.appendChild(card);
+card.className = `
+  bg-transparent p-4 rounded-lg shadow flex flex-col items-center 
+  w-40 sm:w-48 md:w-56 lg:w-64
+  opacity-0 animate-[fadeInUp_0.5s_ease-out_forwards] 
+  ${delayClass}
+`;
+card.innerHTML = `
+  <img src="${posterUrl}" alt="${title}" 
+       class="w-full h-56 sm:h-64 md:h-72 lg:h-80 rounded mb-3 object-cover">
+  <h2 class="text-base sm:text-lg font-semibold text-center">${title}</h2>
+  <p class="text-xs sm:text-sm mt-2 text-gray-300">
+    ${overview || "Sem descrição disponível."}
+  </p>
+  ${providersHTML}
+`;
+resultsDiv.appendChild(card);
+
           });
         }
 
